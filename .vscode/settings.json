@@ -1,4 +1,9 @@
 {
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "ms-python.black-formatter"
+  "editor.defaultFormatter": "ms-python.black-formatter",
+  "python.testing.pytestArgs": [
+    "os_computer_use"
+  ],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }
