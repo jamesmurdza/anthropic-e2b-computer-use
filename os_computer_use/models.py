@@ -1,7 +1,7 @@
 import os
 from dotenv import load_dotenv
 from os_computer_use.llm_provider import LLMProvider
-from os_computer_use.osatlas_provider import OSAtlasProvider
+from os_computer_use.osatlas_provider import OSAtlasProvider, ShowUIProvider
 
 # Load environment variables from .env file
 load_dotenv()
@@ -17,6 +17,8 @@ model_names = {
         "llama3.3": "accounts/fireworks/models/llama-v3p3-70b-instruct",
     },
     "deepseek": {"deepseek-chat": "deepseek-chat"},
+    # grounding models support: showui, osatlas
+    "grounder": "showui",
 }
 
 
@@ -45,6 +47,12 @@ class DeepSeekProvider(LLMProvider):
 
 # Define the models to use in the agent
 
-grounding_model = OSAtlasProvider()
+if model_names["grounder"] == "showui":
+    grounding_model = ShowUIProvider()
+elif model_names["grounder"] == "osatlas":
+    grounding_model = OSAtlasProvider()
+else:
+    raise NotImplementedError(f"Grounder: {model_names["grounder"]} not implemented yet.")
+
 vision_model = FireworksProvider(model_names["fireworks"]["llama3.2"])
 action_model = FireworksProvider(model_names["fireworks"]["llama3.3"])
