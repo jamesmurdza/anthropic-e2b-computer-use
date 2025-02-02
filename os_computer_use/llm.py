@@ -5,6 +5,8 @@ import fireworks.client
 from gradio_client import Client, handle_file
 import base64
 from os_computer_use.utils import print_colored
+import json
+import re
 
 # Load environment variables from .env file
 load_dotenv()
@@ -45,6 +47,36 @@ def create_llama_function_list(definitions):
     return functions
 
 
+def parse_llama_tool_calls(content, tool_calls):
+
+    combined_tool_calls = []
+    for tool_call in tool_calls:
+        try:
+            parameters = json.loads(tool_call.function.arguments)
+            combined_tool_calls.append(
+                {
+                    "type": "function",
+                    "name": tool_call.function.name,
+                    "parameters": parameters,
+                }
+            )
+        except json.JSONDecodeError:
+            print(
+                f"Error decoding JSON for tool call arguments: {tool_call.function.arguments}"
+            )
+
+    if content and not tool_calls:
+        try:
+            tool_call = json.loads(re.search(r"\{.*\}", content).group(0))
+            if tool_call.get("name") and tool_call.get("parameters"):
+                combined_tool_calls.append(tool_call)
+                return None, combined_tool_calls
+        except Exception as e:
+            pass
+
+    return content, combined_tool_calls
+
+
 fireworks.client.api_key = os.getenv("FIREWORKS_API_KEY")
 llama_vision = OpenAI(
     base_url="https://openrouter.ai/api/v1",
@@ -66,7 +98,7 @@ def call_action_model(messages, functions):
         messages=messages,
         tools=create_llama_function_list(functions),
     )
-    return (
+    return parse_llama_tool_calls(
         completion.choices[0].message.content,
         completion.choices[0].message.tool_calls or [],
     )

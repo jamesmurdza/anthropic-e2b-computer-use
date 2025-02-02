@@ -80,7 +80,7 @@ class SandboxAgent:
 
     @tool(
         description="Run a shell command and return the result.",
-        params={"command": "Shell command to run"},
+        params={"command": "Shell command to run synchronously"},
     )
     def run_command(self, command):
         result = self.sandbox.commands.run(command, timeout=5)
@@ -90,15 +90,15 @@ class SandboxAgent:
         elif stdout or stderr:
             return stdout + stderr
         else:
-            return "Done."
+            return "The command finished running."
 
     @tool(
         description="Run a shell command in the background.",
-        params={"command": "Shell command to run without waiting"},
+        params={"command": "Shell command to run asynchronously"},
     )
     def run_background_command(self, command):
         self.sandbox.commands.run(command, background=True)
-        return "Done."
+        return "The command has been started."
 
     @tool(
         description="Send a key or combination of keys to the system.",
@@ -106,7 +106,7 @@ class SandboxAgent:
     )
     def send_key(self, name):
         self.sandbox.commands.run(f"xdotool key -- {name}")
-        return "Done."
+        return "The key has been pressed."
 
     @tool(
         description="Type a specified text into the system.",
@@ -121,7 +121,7 @@ class SandboxAgent:
         for chunk in chunks(text, TYPING_GROUP_SIZE):
             cmd = f"xdotool type --delay {TYPING_DELAY_MS} -- {shlex.quote(chunk)}"
             results.append(self.sandbox.commands.run(cmd))
-        return "Done."
+        return "The text has been typed."
 
     @tool(
         description="Click on a specified UI element.",
@@ -143,7 +143,7 @@ class SandboxAgent:
         x, y = position
         self.sandbox.commands.run(f"xdotool mousemove --sync {x} {y}")
         self.sandbox.commands.run("xdotool click 1")
-        return "Done."
+        return "The mouse has been clicked."
 
     def append_screenshot(self):
         convert_to_content = lambda message: (
@@ -156,12 +156,13 @@ class SandboxAgent:
                     map(
                         convert_to_content,
                         [
-                            "QUESTION: What is the best next action to take in order to complete the objective?",
-                            "CONTEXT: Use this screenshot to decide what to do:",
                             self.take_screenshot(),
-                            "You can click, type, use keyboard commands and run shell commands. Be concise.",
-                            "If the objective appears to be complete, then simply state the the objective is complete.",
-                            "DECISION:",
+                            "This image shows the current display of the computer. Please respond in the following format:\n"
+                            "The objective is: [put the objective here]\n"
+                            "On the screen, I see: [an extensive list of everything that might be relevant to the objective including windows, icons, menus, apps, and UI elements]\n"
+                            "This means the objective is: [complete|not complete]\n\n"
+                            "(Only continue if the objective is not complete.)\n"
+                            "The next step is to [click|type|run the shell command] [put the next single step here] in order to [put what you expect to happen here].",
                         ],
                     ),
                     role="user",
@@ -176,6 +177,8 @@ class SandboxAgent:
 
         should_continue = True
         while should_continue:
+            # Stop the sandbox from timing out
+            self.sandbox.set_timeout(60)
 
             content, tool_calls = call_action_model(
                 [
@@ -185,7 +188,7 @@ class SandboxAgent:
                         log=False,
                     ),
                     *self.messages,
-                    Message(f"CONTEXT: {self.append_screenshot()}", color="green"),
+                    Message(f"THOUGHT: {self.append_screenshot()}", color="green"),
                     Message(
                         "I will now use tool calls to take these actions, or use the stop command if the objective is complete.",
                         log=False,
@@ -199,19 +202,14 @@ class SandboxAgent:
 
             should_continue = False
             for tool_call in tool_calls:
-                should_continue = tool_call.function.name != "stop"
+                name, parameters = tool_call.get("name"), tool_call.get("parameters")
+                should_continue = name != "stop"
                 if not should_continue:
                     break
-
-                try:
-                    name = tool_call.function.name
-                    arguments = json.loads(tool_call.function.arguments)
-                    print_colored(f"ACTION: {name} {str(arguments)}", color="red")
-                    # Write the tool-call to the message history using the same format outputted by the model
-                    action = str({"name": name, "parameters": arguments})
-                    self.messages.append(Message(f"ACTION: {action}", log=False))
-                    result = self.call_function(name, arguments)
-                except Exception as e:
-                    result = str(e)
+                # Print the tool-call in an easily readable format
+                print_colored(f"ACTION: {name} {str(parameters)}", color="red")
+                # Write the tool-call to the message history using the same format used by the model
+                self.messages.append(Message(json.dumps(tool_call), log=False))
+                result = self.call_function(name, parameters)
 
                 self.messages.append(Message(f"OBSERVATION: {result}", color="yellow"))
