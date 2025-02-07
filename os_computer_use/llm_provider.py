@@ -1,5 +1,6 @@
 from openai import OpenAI
 from anthropic import Anthropic
+from litellm import completion
 
 import json
 import re
@@ -89,13 +90,13 @@ class LLMProvider:
         # Wrap content blocks in image or text objects if necessary
         new_messages = [self.transform_message(message) for message in messages]
         # Call the inference provider
-        completion = self.client.create(
-            messages=new_messages, model=self.model, **filtered_kwargs
+        completion_response = self.client(
+            model=self.model,
+            messages=new_messages,
+            api_key=self.api_key,
+            **filtered_kwargs,
         )
-        # Check for errors in the response
-        if hasattr(completion, "error"):
-            raise Exception("Error calling model: {}".format(completion.error))
-        return completion
+        return completion_response
 
 
 class OpenAIBaseProvider(LLMProvider):
