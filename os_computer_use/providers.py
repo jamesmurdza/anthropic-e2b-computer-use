@@ -134,10 +134,3 @@ class LiteLLMProvider(LiteLLMBaseProvider):
     @classmethod
     def get_text_models(cls):
         return list(cls.TEXT_MODELS.keys())
-
-    @classmethod
-    def get_providers(cls, model):
-        model_info = cls.aliases.get(model)
-        if isinstance(model_info, dict):
-            return list(model_info.keys())
-        return [model_info.split("/")[0]] if model_info else []
