@@ -1,5 +1,6 @@
 from openai import OpenAI
 from anthropic import Anthropic
+from litellm import completion
 
 import json
 import re
@@ -89,13 +90,13 @@ class LLMProvider:
         # Wrap content blocks in image or text objects if necessary
         new_messages = [self.transform_message(message) for message in messages]
         # Call the inference provider
-        completion = self.client.create(
-            messages=new_messages, model=self.model, **filtered_kwargs
+        completion_response = self.client(
+            model=self.model,
+            messages=new_messages,
+            api_key=self.api_key,
+            **filtered_kwargs,
         )
-        # Check for errors in the response
-        if hasattr(completion, "error"):
-            raise Exception("Error calling model: {}".format(completion.error))
-        return completion
+        return completion_response
 
 
 class OpenAIBaseProvider(LLMProvider):
@@ -224,6 +225,46 @@ class MistralBaseProvider(OpenAIBaseProvider):
 
     def call(self, messages, functions=None):
         if messages and messages[-1].get("role") == "assistant":
+            prefix = messages.pop()["content"]
+            if messages and messages[-1].get("role") == "user":
+                messages[-1]["content"] = (
+                    prefix + "\n" + messages[-1].get("content", "")
+                )
+            else:
+                messages.append({"role": "user", "content": prefix})
+        return super().call(messages, functions)
+
+
+class LiteLLMBaseProvider(OpenAIBaseProvider):
+    """Base provider using LiteLLM"""
+
+    def create_client(self):
+        return completion
+
+    def completion(self, messages, **kwargs):
+        # Skip the tools parameter if it's None
+        filtered_kwargs = {k: v for k, v in kwargs.items() if v is not None}
+
+        # Wrap content blocks in image or text objects if necessary
+        new_messages = [self.transform_message(message) for message in messages]
+
+        # Call LiteLLM completion
+        completion_response = self.client(
+            model=self.model,
+            messages=new_messages,
+            api_key=self.api_key,
+            **filtered_kwargs,
+        )
+
+        return completion_response
+
+    # Added method to adjust the final message role for Mistral-based models only
+    def call(self, messages, functions=None):
+        if (
+            "mistral" in self.model.lower()
+            and messages
+            and messages[-1].get("role") == "assistant"
+        ):
             prefix = messages.pop()["content"]
             if messages and messages[-1].get("role") == "user":
                 messages[-1]["content"] = (
