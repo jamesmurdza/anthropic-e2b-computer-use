@@ -47,47 +47,6 @@ messages = [
     )
 ]
 
-# Anthropic
-opus = AnthropicProvider("claude-3-opus")
-print(opus.call(toolcall_messages, tools)[1])
-print(opus.call(messages))
-
-# OpenAI
-gpt4o = OpenAIProvider("gpt-4o")
-print(gpt4o.call(toolcall_messages, tools)[1])
-print(gpt4o.call(messages))
-
-# Groq
-groq = GroqProvider("llama3.2")
-print(groq.call(toolcall_messages, tools)[1])
-print(groq.call(messages))
-
-# Fireworks
-fireworks = FireworksProvider("llama3.2")
-print(fireworks.call(toolcall_messages, tools)[1])
-print(fireworks.call(messages))
-
-
-# Pixtral
-mistral = MistralProvider("pixtral")
-print("\nTesting Mistral :")
-print(mistral.call(toolcall_messages, tools)[1])
-print(mistral.call(messages))
-
-
-# Mistral Large (non-vision) using text-only messages
-mistral_large = MistralProvider(
-    "large"
-)  # Using mistral-large-latest for non-vision tasks
-text_messages = [Message("What is the capital of France?", role="user")]
-print("\nTesting Mistral Large with text-only:")
-print(mistral_large.call(text_messages))
-
-# Test tool calls for Mistral Large using text-only messages (no image data)
-text_tool_messages = [Message("Click on the submit button", role="user")]
-print("\nTesting Mistral Large Tool Calls with text:")
-print(mistral_large.call(text_tool_messages, tools)[1])
-
 
 # Test LiteLLM with Pixtral
 litellm = LiteLLMProvider("pixtral")
@@ -120,9 +79,7 @@ print(litellm_claude_sonnet.call(toolcall_messages, tools)[1])
 print(litellm_claude_sonnet.call(messages))
 
 
-# # Test LiteLLM with Gemini 2.0
-print("\n=== Gemini Provider Test ===")
-# Create a Gemini model instance using a hardcoded model string.
+# Test LiteLLM with Gemini 2.0
 gemini_llm = LiteLLMProvider("gemini-2.0-flash")
 print("\nTesting LiteLLM with Gemini-2.0-Flash:")
 print(gemini_llm.call(toolcall_messages, tools)[1])
