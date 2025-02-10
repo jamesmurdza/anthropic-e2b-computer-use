@@ -1,11 +1,7 @@
-from os_computer_use.providers import (
-    AnthropicProvider,
-    OpenAIProvider,
-    GroqProvider,
-    FireworksProvider,
-    MistralProvider,
-)
+from os_computer_use.providers import LiteLLMProvider
 from os_computer_use.llm_provider import Message
+import base64
+
 
 # Define tools available for use
 tools = {
@@ -14,7 +10,6 @@ tools = {
         "params": {"description": "Description of the item to click on"},
     }
 }
-
 
 
 # Function to simulate taking a screenshot
@@ -45,42 +40,40 @@ messages = [
     )
 ]
 
-# Anthropic
-opus = AnthropicProvider("claude-3-opus")
-print(opus.call(toolcall_messages, tools)[1])
-print(opus.call(messages))
 
-# OpenAI
-gpt4o = OpenAIProvider("gpt-4o")
-print(gpt4o.call(toolcall_messages, tools)[1])
-print(gpt4o.call(messages))
+# Test LiteLLM with Pixtral
+litellm = LiteLLMProvider("pixtral")
+print("\nTesting LiteLLM with Pixtral:")
+print(litellm.call(toolcall_messages, tools)[1])
+print(litellm.call(messages))
 
-# Groq
-groq = GroqProvider("llama3.2")
-print(groq.call(toolcall_messages, tools)[1])
-print(groq.call(messages))
-
-# Fireworks
-fireworks = FireworksProvider("llama3.2")
-print(fireworks.call(toolcall_messages, tools)[1])
-print(fireworks.call(messages))
-
-
-
-# Pixtral
-mistral = MistralProvider("pixtral") 
-print("\nTesting Mistral :")
-print(mistral.call(toolcall_messages, tools)[1])
-print(mistral.call(messages))
-
-
-# Mistral Large (non-vision) using text-only messages
-mistral_large = MistralProvider("large")  # Using mistral-large-latest for non-vision tasks
+# Test LiteLLM with Mistral Large (non-vision)
+litellm_large = LiteLLMProvider("large")  # Using mistral-large-latest
 text_messages = [Message("What is the capital of France?", role="user")]
-print("\nTesting Mistral Large with text-only:")
-print(mistral_large.call(text_messages))
+print("\nTesting LiteLLM Mistral Large with text-only:")
+print(litellm_large.call(text_messages))
 
-# Test tool calls for Mistral Large using text-only messages (no image data)
+# Test tool calls for Mistral Large using text-only messages
 text_tool_messages = [Message("Click on the submit button", role="user")]
-print("\nTesting Mistral Large Tool Calls with text:")
-print(mistral_large.call(text_tool_messages, tools)[1])
+print("\nTesting LiteLLM Mistral Large Tool Calls with text:")
+print(litellm_large.call(text_tool_messages, tools)[1])
+
+# Test LiteLLM with Claude-3-Opus
+litellm_claude = LiteLLMProvider("claude-3-opus")
+print("\nTesting LiteLLM with Claude-3-Opus:")
+print(litellm_claude.call(toolcall_messages, tools)[1])
+print(litellm_claude.call(messages))
+
+
+# Test LiteLLM with Claude-3-Sonnet
+litellm_claude_sonnet = LiteLLMProvider("claude-3-sonnet")
+print("\nTesting LiteLLM with Claude-3-Sonnet:")
+print(litellm_claude_sonnet.call(toolcall_messages, tools)[1])
+print(litellm_claude_sonnet.call(messages))
+
+
+# Test LiteLLM with Gemini 2.0
+gemini_llm = LiteLLMProvider("gemini-2.0-flash")
+print("\nTesting LiteLLM with Gemini-2.0-Flash:")
+print(gemini_llm.call(toolcall_messages, tools)[1])
+print(gemini_llm.call(messages))
