@@ -7,6 +7,7 @@ from os_computer_use.providers import (
     LiteLLMProvider,
 )
 from os_computer_use.llm_provider import Message
+import base64
 
 
 # Define tools available for use
@@ -104,3 +105,25 @@ print(litellm_large.call(text_messages))
 text_tool_messages = [Message("Click on the submit button", role="user")]
 print("\nTesting LiteLLM Mistral Large Tool Calls with text:")
 print(litellm_large.call(text_tool_messages, tools)[1])
+
+# Test LiteLLM with Claude-3-Opus
+litellm_claude = LiteLLMProvider("claude-3-opus")
+print("\nTesting LiteLLM with Claude-3-Opus:")
+print(litellm_claude.call(toolcall_messages, tools)[1])
+print(litellm_claude.call(messages))
+
+
+# Test LiteLLM with Claude-3-Sonnet
+litellm_claude_sonnet = LiteLLMProvider("claude-3-sonnet")
+print("\nTesting LiteLLM with Claude-3-Sonnet:")
+print(litellm_claude_sonnet.call(toolcall_messages, tools)[1])
+print(litellm_claude_sonnet.call(messages))
+
+
+# # Test LiteLLM with Gemini 2.0
+print("\n=== Gemini Provider Test ===")
+# Create a Gemini model instance using a hardcoded model string.
+gemini_llm = LiteLLMProvider("gemini-2.0-flash")
+print("\nTesting LiteLLM with Gemini-2.0-Flash:")
+print(gemini_llm.call(toolcall_messages, tools)[1])
+print(gemini_llm.call(messages))
