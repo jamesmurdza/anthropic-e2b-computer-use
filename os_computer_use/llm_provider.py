@@ -75,6 +75,13 @@ class LLMProvider:
                 properties[param_name] = {"type": "string", "description": param_desc}
                 required.append(param_name)
 
+            # Add a dummy property if no parameters are provided, because providers like Gemini require a non-empty "properties" object.
+            if not properties:
+                properties["noop"] = {
+                    "type": "string",
+                    "description": "Dummy parameter for function with no parameters.",
+                }
+
             function_def = self.create_function_def(name, details, properties, required)
             functions.append(function_def)
 
